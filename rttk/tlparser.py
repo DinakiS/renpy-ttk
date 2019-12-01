@@ -67,12 +67,26 @@ def extract_dqstrings(line):
         pos += 1
     return ret
 
+def extract_who(line):
+    '''
+    Extract speaker variable if exists
+    '''
+    who = line.strip().split()[0]
+
+    if who.startswith('"') or who.startswith("'"):
+        return None
+
+    return who
+
+
 def extract_dialog_string(dialog_line):
     res = extract_dqstrings(dialog_line)
     if len(res) == 0:
         return None
     if len(res) > 1:  # (who, what)
+        res[1]['who'] = res[0]['text']
         return res[1]
+    res[0]['who'] = extract_who(dialog_line)
     return res[0]  # (what)
 
 def extract_base_string(dialog_line):
@@ -85,7 +99,7 @@ def extract_base_string(dialog_line):
 
 def parse_next_block(lines):
     ret = []
-    block_string = {'id':None, 'source':None, 'text':None, 'translation':None}
+    block_string = {'id':None, 'source':None, 'who': None, 'text':None, 'translation':None}
     while len(lines) > 0:
         line = lines.pop()
         if is_empty(line):
@@ -147,6 +161,9 @@ def parse_next_block(lines):
                         if s is None:
                             continue  # not a dialog line
                         block_string['text'] = s['text']
+
+                        if 'who' in s:
+                            block_string['who'] = s['who']
                 if block_string['text'] is not None:
                     ret = [block_string]
                 break
