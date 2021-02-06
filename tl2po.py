@@ -2,7 +2,7 @@
 
 # Convert .rpy translation blocks and strings to .po gettext catalog
 
-# Copyright (C) 2019  Sylvain Beucler
+# Copyright (C) 2019, 2020  Sylvain Beucler
 
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
@@ -28,15 +28,15 @@
 # - import default Ren'Py translated strings from "The Question"
 
 from __future__ import print_function
-import sys, os, fnmatch, operator, io
+import sys, os, fnmatch, io
 import re
 import shutil
 import rttk.run, rttk.tlparser, rttk.utf_8_sig
 
 
 def tl2po(projectpath, language, outfile=None):
-    if not re.match('^[a-z_]+$', language):
-        raise Exception("Invalid language", language)
+    if not re.match('^[a-z_]+$', language, re.IGNORECASE):
+        raise Exception("Invalid language name", language)
     if not os.path.isdir(os.path.join(projectpath,'game','tl',language)):
         raise Exception("Language not found", os.path.join(projectpath,'game','tl',language))
 
@@ -54,14 +54,21 @@ def tl2po(projectpath, language, outfile=None):
     rttk.run.renpy([projectpath, 'translate', 'pot', '--compile'])
     
     originals = []
-    for curdir, subdirs, filenames in sorted(os.walk(os.path.join(projectpath,'game','tl','pot')), key=operator.itemgetter(0)):
-        for filename in sorted(fnmatch.filter(filenames, '*.rpy')):
-            print("Parsing  " + os.path.join(curdir,filename))
+    for curdir, subdirs, filenames in os.walk(os.path.join(projectpath,'game','tl','pot')):
+        for filename in fnmatch.filter(filenames, '*.rpy'):
+            print("Parsing " + os.path.join(curdir,filename))
             f = io.open(os.path.join(curdir,filename), 'r', encoding='utf-8-sig')
             lines = f.readlines()
             lines.reverse()
             while len(lines) > 0:
-                originals.extend(rttk.tlparser.parse_next_block(lines))
+                parsed = rttk.tlparser.parse_next_block(lines)
+                for s in parsed:
+                    if s['text'] is None:
+                        continue
+                    if s['text'] == '':
+                        # '' is special in gettext, don't attempt to translate it
+                        continue
+                    originals.append(s)
 
     translated = []
     for curdir, subdirs, filenames in os.walk(os.path.join(projectpath,'game','tl',language)):
@@ -101,7 +108,7 @@ msgstr ""
             out.write(u'msgctxt "' + (s['id'] or s['source']) + u'"\n')
         out.write('msgid "' + s['text'] + '"\n')
         if s['id'] is not None and t_blocks_index.has_key(s['id']):
-            out.write(u'msgstr "' + t_blocks_index[s['id']] + u'"\n')
+            out.write(u'msgstr "' + (t_blocks_index[s['id']] or '') + u'"\n')
         else:
             out.write(u'msgstr "' + t_basestr_index.get(s['text'],'') + u'"\n')
         out.write(u'\n')

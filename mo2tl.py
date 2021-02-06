@@ -2,7 +2,7 @@
 
 # Convert .mo compiled catalog to .rpy translation blocks and strings
 
-# Copyright (C) 2019  Sylvain Beucler
+# Copyright (C) 2019, 2020  Sylvain Beucler
 
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
@@ -28,7 +28,7 @@ import sys, os, fnmatch, io
 import re
 import subprocess, shutil
 import tempfile
-import rttk.run, rttk.tlparser, rttk.utf_8_sig
+import rttk.run, rttk.tlparser, rttk.utf_8_sig, rttk.msgfmt
 import gettext
 
 # Doc: manual .mo test:
@@ -89,10 +89,18 @@ def c_escape(s):
     '''
     return ''.join([ESCAPE_CHARS.get(c, c) for c in s])
 
+def ugettext_nometadata(translations, lookup):
+    '''
+    Wrapper around translations.ugettext() to avoid returning metadata
+    as the translation for the empty string
+    '''
+    if lookup == '':
+        return None
+    return translations.ugettext(lookup)
 
 def mo2tl(projectpath, mofile, renpy_target_language):
-    if not re.match('^[a-z_]+$', renpy_target_language):
-        raise Exception("Invalid language", renpy_target_language)
+    if not re.match('^[a-z_]+$', renpy_target_language, re.IGNORECASE):
+        raise Exception("Invalid language name", renpy_target_language)
 
     # Refresh strings
     print("Calling Ren'Py translate to get untranslated strings")
@@ -134,14 +142,13 @@ def mo2tl(projectpath, mofile, renpy_target_language):
                           os.environ['LANG'],
                           'LC_MESSAGES')
     os.makedirs(msgdir)
+    dest_mofile = os.path.join(msgdir, 'game.mo')
     if mofile.endswith('.po'):
         pofile = mofile
-        print(".po ->", os.path.join(msgdir, 'game.mo'))
-        ret = subprocess.call(['msgfmt', pofile, '-v', '-o', os.path.join(msgdir, 'game.mo')])
-        if ret != 0:
-            raise Exception("msgfmt failed")
+        print(".po ->", dest_mofile)
+        rttk.msgfmt.make(pofile, dest_mofile)
     else:
-        shutil.copy2(mofile, os.path.join(msgdir, 'game.mo'))
+        shutil.copy2(mofile, dest_mofile)
     translations = gettext.translation('game', localedir)
     class NoneOnMissingTranslation:
         @staticmethod
@@ -159,11 +166,13 @@ def mo2tl(projectpath, mofile, renpy_target_language):
             f_in.close()
         
             out = io.open(scriptpath, 'w', encoding='utf-8-sig')
+            last_comment = ''
             while len(lines) > 0:
                 line = lines.pop()
                 if rttk.tlparser.is_empty(line):
                     out.write(line)
                 elif rttk.tlparser.is_comment(line):
+                    last_comment = line
                     out.write(line)
                 elif rttk.tlparser.is_block_start(line):
                     msgid = line.strip(':\n').split()[2]
@@ -187,11 +196,11 @@ def mo2tl(projectpath, mofile, renpy_target_language):
                                 msgstr = rttk.tlparser.extract_base_string(line)['text']
                                 lookup = c_unescape(msgstr)
                                 lookup = msgctxt+'\x04'+lookup
-                                translation = translations.ugettext(lookup)
+                                translation = ugettext_nometadata(translations, lookup)
                                 if translation is None:
                                         # no match with context, try without
                                         lookup = c_unescape(msgstr)
-                                        translation = translations.ugettext(lookup)
+                                        translation = ugettext_nometadata(translations, lookup)
                                 if translation is not None:
                                     translation = c_escape(translation)
                                 msgctxt = ''
@@ -206,6 +215,10 @@ def mo2tl(projectpath, mofile, renpy_target_language):
                             out.write(line)
                     else:
                         # dialog block
+                        if not o_blocks_index.has_key(msgid):
+                            obsolete = u"# OBSOLETE\n"
+                            if last_comment != obsolete:
+                                out.write(obsolete)
                         out.write(line)
                         while len(lines) > 0:
                             line = lines.pop()
@@ -222,7 +235,10 @@ def mo2tl(projectpath, mofile, renpy_target_language):
                                 # statement
                                 s = rttk.tlparser.extract_dialog_string(line)
                                 if s is None:
-                                    # no double-quoted string, not a dialog line (e.g. nvl)
+                                    # no ID (e.g. python block)
+                                    pass
+                                elif s['text'] is None:
+                                    # no double-quoted string (e.g. nvl)
                                     pass
                                 elif re.match('^\s*voice\s', line):
                                     # voice tag, not a dialog line
@@ -235,11 +251,11 @@ def mo2tl(projectpath, mofile, renpy_target_language):
                                     msgctxt = msgid
                                     lookup = c_unescape(msgstr)
                                     lookup = msgctxt+'\x04'+lookup
-                                    translation = translations.ugettext(lookup)
+                                    translation = ugettext_nometadata(translations, lookup)
                                     if translation is None:
                                         # no match with context, try without
                                         lookup = c_unescape(msgstr)
-                                        translation = translations.ugettext(lookup)
+                                        translation = ugettext_nometadata(translations, lookup)
                                     if translation is not None:
                                         translation = c_escape(translation)
                                         line = line[:s['start']]+translation+line[s['end']:]

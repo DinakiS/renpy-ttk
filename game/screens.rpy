@@ -27,14 +27,15 @@
     def projects_directory():
         f = os.path.join(renpy.config.savedir,'..','launcher-4/persistent')
         p = renpy.persistent.load(f)
-        return p.projects_directory
+        return p and p.projects_directory
 
     def projects_list():
         import glob
-        dirs = (
-            sorted(glob.glob(os.path.join(projects_directory(),'*'))) +
-            sorted(glob.glob(os.path.join(config.renpy_base,'*')))
-        )
+        dirs = []
+        projects_dir = projects_directory()
+        if projects_dir and projects_dir != config.renpy_base:
+            dirs += sorted(glob.glob(os.path.join(projects_dir,'*')))
+        dirs += sorted(glob.glob(os.path.join(config.renpy_base,'*')))
         return [d for d in dirs if os.path.isdir(os.path.join(d,'game'))]
 
     def languages_list():
@@ -155,7 +156,7 @@ screen main_menu():
             null height 10
             textbutton "tl2pot: generate POT template for your game" action Jump("TL2POT")
             textbutton "tl2po: extract existing Ren'Py translations to PO catalog" action Jump("TL2PO")
-            textbutton "mo2tl: inject MO catalog into Ren'Py translations" action Jump("MO2TL")
+            textbutton "mo2tl: inject PO/MO catalog into Ren'Py translations" action Jump("MO2TL")
             #textbutton "Test" action Jump("ltest_error")
             null height 20
             if projectpath:

@@ -2,7 +2,7 @@
 
 # Ren'Py translate blocks parser
 
-# Copyright (C) 2019  Sylvain Beucler
+# Copyright (C) 2019, 2020  Sylvain Beucler
 
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
@@ -50,20 +50,36 @@ def extract_dqstrings(line):
                 pos += 1
             pos += 1
         return pos
+    def skip_paren(pos):
+        while pos < len(line) and line[pos] != ')':
+            if line[pos] == '(':
+                pos = skip_paren(pos+1)
+            elif line[pos] in (SQ, DQ):
+                delim = line[pos]
+                pos += 1
+                pos = skip_to_delim(pos, delim)
+            pos += 1
+        return pos
     pos = 0
     ret = []
     SQ = "'"
     DQ = '"'
     while pos < len(line):
-        if line[pos] in (SQ, DQ):
+        if line[pos] == '(':
+            # Either already _(marked) for translation, either say
+            # parameters, so discarded
+            pos = skip_paren(pos+1)
+        elif line[pos] in (SQ, DQ):
             delim = line[pos]
             pos += 1
             start = pos
             pos = skip_to_delim(pos, delim)
-            if pos >= len(line) or line[pos] != delim:
-                raise Exception("unterminated string: " + line[start:pos])
+            if pos >= len(line):
+                raise Exception("unterminated string: " + line[start:pos] + " in line: " + line)
             if delim == DQ:
                 ret.append({'start':start, 'end':pos, 'text': line[start:pos]})
+        elif line[pos] == '#':
+            break
         pos += 1
     return ret
 
@@ -93,9 +109,7 @@ def extract_base_string(dialog_line):
     res = extract_dqstrings(dialog_line)
     if len(res) == 0:
         return None
-    if len(res) > 1:  # (who, what)
-        return res[1]
-    return res[0]  # (what)
+    return res[0]
 
 def parse_next_block(lines):
     ret = []
@@ -164,8 +178,7 @@ def parse_next_block(lines):
 
                         if 'who' in s:
                             block_string['who'] = s['who']
-                if block_string['text'] is not None:
-                    ret = [block_string]
+                ret = [block_string]
                 break
 
         else:  # Unknown

@@ -3,12 +3,24 @@
 Tools for translators working on Ren'Py games, in particular PO format import/export.
 
 <https://www.beuc.net/renpy-ttk/>  
+<https://lemmasoft.renai.us/forums/viewtopic.php?f=32&t=55318>  
+
 <https://renpy.beuc.net/download/renpy-ttk-latest.zip>  
-[fossil](https://www.fossil-scm.org/) `clone https://www.beuc.net/renpy-ttk/ ...`
+[fossil](https://www.fossil-scm.org/) `clone https://www.beuc.net/renpy-ttk/ ...`  
 
 This is [free software](https://www.gnu.org/philosophy/free-sw.html):
 you are free to change and redistribute it under certain conditions;
 see LICENSE for details.
+
+
+## Contact
+
+For feedback and bug reports, you can reach me through
+[Lemma Soft Forums](https://lemmasoft.renai.us/forums/viewtopic.php?f=32&t=55318)
+or [e-mail](mailto:beuc@beuc.net).
+
+If this program was useful to you, please support my work through
+[Patreon](https://www.beuc.net/donate/) :)
 
 
 ## Features / benefits
@@ -48,7 +60,7 @@ single click.
 
 Add `renpy.sh` to your `PATH`:
 
-`PATH=~/.../renpy-7.2.2-sdk:$PATH ./tl2pot.py ~/.../mygame/`
+`PATH=~/.../renpy-7.3.5-sdk:$PATH ./tl2pot.py ~/.../mygame/`
 
 
 ## Workflow with your PO editor
@@ -123,16 +135,5 @@ the `.rpyc` files from the `tl/language` directories once you release
 a version of your game.  Otherwise your players will lose their seen
 texts on the next update, which is a frustrating gaming experience.
 This is not specific to renpy-ttk but it's easy to forget about it.
-Also if you keep the `.rpyc` translation files but remove the `.rpy`
-ones, Ren'Py will not regenerate them, so I suggest keeping those as
-well.
-
-
-## Contact
-
-For feedback and bug reports, you can reach me through
-[Lemma Soft Forums](https://lemmasoft.renai.us/forums/viewtopic.php?f=32&t=55318)
-or [e-mail](mailto:beuc@beuc.net).
-
-If this program was useful to you, please support me through
-[Patreon](https://www.beuc.net/donate/) :)
+The same will eventually happen if you keep the `.rpyc` translation
+files but remove the `.rpy` ones, so I suggest keeping those as well.

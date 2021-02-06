@@ -142,6 +142,30 @@ translate french start_7e46d471:
     # b "「unicode characters♪」"
     b "「caractères unicode♪」"
 
+# game/script.rpy:97
+translate french start_d0996e27:
+
+    # e "say parameters with string" (show_param="é")
+    e "say avec paramètre chaîne de charactère" (show_param="é")
+
+# game/script.rpy:99
+translate french start_652fb693:
+
+    # "skipped translation"
+    "skipped translation"
+
+# game/script.rpy:105
+translate french start_0ae9bcd0:
+
+    # ""
+    ""
+
+# game/script.rpy:107
+translate french start_9ea2f78c:
+
+    # " "
+    " "
+
 translate french strings:
 
     # game/script.rpy:7
@@ -171,4 +195,18 @@ translate french strings:
     # game/script.rpy:85
     old "dupmenuentry"
     new "dupmenuentrée"
+
+# game/script.rpy:1
+# OBSOLETE
+translate french start_baaaaaad:
+
+    # e "obsolete entry"
+    e "entrée obsolète"
+
+# game/script.rpy:2
+# OBSOLETE
+translate french start_badddddd:
+
+    # e "obsolete entry 2"
+    e "entrée obsolète 2"
 

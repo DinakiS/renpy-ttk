@@ -2,7 +2,7 @@
 
 # Tests for Ren'Py translate blocks parser
 
-# Copyright (C) 2019  Sylvain Beucler
+# Copyright (C) 2019, 2020  Sylvain Beucler
 
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
@@ -52,8 +52,28 @@ class TestTlparser(unittest.TestCase):
             [{'start': 31, 'end': 74, 'text': ur'''Tricky single/double '\" multiple strings 2'''}])
         testcase = ur'''_( "string \" character" ) "Tricky double/double \"' multiple strings"'''
         self.assertEqual(tlparser.extract_dqstrings(testcase),
-            [{'start':  4, 'end': 23, 'text': ur'''string \" character'''},
-             {'start': 28, 'end': 69, 'text': ur'''Tricky double/double \"' multiple strings'''}])
+            [{'start': 28, 'end': 69, 'text': ur'''Tricky double/double \"' multiple strings'''}])
+        testcase = ur'''    e "Hello" (show_param="value")'''
+        self.assertEqual(tlparser.extract_dialog_string(testcase),
+            {'start': 7, 'end': 12, 'text': u'''Hello'''})
+        testcase = ur'''    _(")") "Hello" (show_param="value")'''
+        self.assertEqual(tlparser.extract_dialog_string(testcase),
+            {'start': 12, 'end': 17, 'text': u'''Hello'''})
+        testcase = ur'''    _(("char")) "Hello" (show_params=("value1","value2"))'''
+        self.assertEqual(tlparser.extract_dialog_string(testcase),
+            {'start': 17, 'end': 22, 'text': u'''Hello'''})
+        testcase = ur'''    e "Hello"  #"Ciao"'''
+        self.assertEqual(tlparser.extract_dqstrings(testcase),
+            [{'start': 7, 'end': 12, 'text': ur'''Hello'''}])
+        testcase = ur'''    e "Hello"  #"Ciao'''
+        self.assertEqual(tlparser.extract_dqstrings(testcase),
+            [{'start': 7, 'end': 12, 'text': ur'''Hello'''}])
+        testcase = ur'''    e "He#llo"  #"Ciao"'''
+        self.assertEqual(tlparser.extract_dqstrings(testcase),
+            [{'start': 7, 'end': 13, 'text': ur'''He#llo'''}])
+        testcase = ur'''    _("#") "Hello"  #"Ciao"'''
+        self.assertEqual(tlparser.extract_dqstrings(testcase),
+            [{'start': 12, 'end': 17, 'text': ur'''Hello'''}])
 
     def test_extract_base_string(self):
         self.assertEqual(
@@ -116,7 +136,27 @@ translate russian tutorial_nvlmode_76b2fe88:
 """
         lines = [l+"\n" for l in lines.split("\n")]
         lines.reverse()
-        self.assertEqual(tlparser.parse_next_block(lines), [])
+        self.assertEqual(tlparser.parse_next_block(lines), [{
+            'id': u'tutorial_nvlmode_76b2fe88',
+            'source': None,
+            'text': None,
+            'translation': None
+        }])
+
+        lines = u"""
+translate russian bypass_fab12c567:
+
+    # e "Hello."
+    pass
+"""
+        lines = [l+"\n" for l in lines.split("\n")]
+        lines.reverse()
+        self.assertEqual(tlparser.parse_next_block(lines), [{
+            'id': u'bypass_fab12c567',
+            'source': None,
+            'text': None,
+            'translation': None
+        }])
 
         lines = u"""
 translate piglatin style default:

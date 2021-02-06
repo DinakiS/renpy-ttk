@@ -2,7 +2,7 @@
 
 # Run CLI Ren'Py
 
-# Copyright (C) 2019  Sylvain Beucler
+# Copyright (C) 2019, 2020  Sylvain Beucler
 
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
@@ -33,11 +33,11 @@ except:
 
 def renpy(args):
     global in_renpy
+    command = ['renpy.sh']
     if in_renpy:
         # cf. launcher/game/project.rpy
-        ret = subprocess.call([sys.executable, '-EO', sys.argv[0]]+args)
-    else:
-        ret = subprocess.call(['renpy.sh']+args)
-    if ret != 0:
-        # TODO: get a copy of stdout/stderr
-        raise Exception("Ren'Py error")
+        command = [sys.executable, '-EO', sys.argv[0]]
+    try:
+        subprocess.check_output(command+args, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        raise Exception("Ren'Py error: " + e.output)
